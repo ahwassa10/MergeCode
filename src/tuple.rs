@@ -2,14 +2,14 @@
 
 use std::cmp::Ordering;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Tuple {
     pub key: u64,
     pub payload: u64
 }
 
 impl Tuple {
-    fn new(key: u64, payload: u64) -> Tuple {
+    pub fn new(key: u64, payload: u64) -> Tuple {
         Tuple {key, payload}
     }
 }

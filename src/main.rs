@@ -5,6 +5,7 @@ use crate::{infrastructure::gen_tables};
 mod merge;
 mod tuple;
 mod infrastructure;
+mod join;
 
 fn main() {
     let mut rng = StdRng::seed_from_u64(42);
