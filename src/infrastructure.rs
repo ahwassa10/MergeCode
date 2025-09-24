@@ -47,3 +47,26 @@ pub fn gen_tables<R: Rng>(n: usize, p: f64, rng: &mut R) -> (Vec<Tuple>, Vec<Tup
 
     (fact_table, dimension_table)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use rand::{rngs::StdRng, SeedableRng};
+
+    use super::*;
+
+    #[test]
+    fn foreign_key_check() {
+        let mut rng = StdRng::seed_from_u64(101);
+        let (ft, dt) = gen_tables(10000, 0.8, &mut rng);
+
+        let keys = dt.iter().map(|tuple| tuple.key).collect::<HashSet<u64>>();
+        
+        for tuple in ft {
+            let key = tuple.key;
+            assert!(keys.contains(&key),
+            "Referential integrity violation. Foreign key {key} does not exist in dimension table");
+        }
+    }
+}
