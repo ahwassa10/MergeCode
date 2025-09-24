@@ -1,22 +1,19 @@
 use std::{iter::Peekable, slice::Iter};
+use rand::{rngs::StdRng, SeedableRng};
 
-use crate::merge::Merge;
+use crate::{infrastructure::{gen_dimension_keys, gen_fact_keys, gen_tables}, merge::Merge, tuple::Tuple};
 
 mod merge;
+mod tuple;
+mod infrastructure;
 
 fn main() {
-    let data = vec![vec![3, 7, 11], vec![2, 2, 6, 9], vec![1, 3, 8, 10, 11], vec![5, 12, 14]];
-    
-    let dataset: Vec<Peekable<Iter<i64>>> = data.iter().map(|v| v.iter().peekable()).collect();
-    
-    let mut m = Merge::new(dataset);
-    println!("Initial Tree: {:?}", m.loser_tree);
-    println!("Initial winner: {:?}", m.winner_index);
+    let mut rng = StdRng::seed_from_u64(42);
+    let (ft, dt) = gen_tables(20, 0.5, &mut rng);
 
-    println!("First: {:?}", m.next());
-    println!("Second: {:?}", m.next());
-    println!("Third: {:?}", m.next());
-    println!("Fourth: {:?}", m.next());
+    println!("ft len: {}, dt len: {}", ft.len(), dt.len());
+    println!("ft: {:?}", ft);
+    println!("dt: {:?}", dt);
 }
 
 #[cfg(test)]
