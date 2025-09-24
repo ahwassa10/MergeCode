@@ -1,8 +1,8 @@
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 
 use crate::tuple::Tuple;
 
-pub fn gen_dimension_keys<R: Rng>(key_set: &[u64], p: f64, rng: &mut R) -> Vec<u64> {
+pub fn gen_fact_keys<R: Rng>(key_set: &[u64], p: f64, rng: &mut R) -> Vec<u64> {
     assert!(p >= 0.0 && p < 1.0,
         "p must be a probability between 0 and 1");
 
@@ -15,7 +15,7 @@ pub fn gen_dimension_keys<R: Rng>(key_set: &[u64], p: f64, rng: &mut R) -> Vec<u
     output
 }
 
-pub fn gen_fact_keys<R: Rng>(n: usize, rng: &mut R) -> Vec<u64> {
+pub fn gen_keys<R: Rng>(n: usize, rng: &mut R) -> Vec<u64> {
     let mut output = Vec::new();
     for _ in 0..n {
         output.push(rng.random());
@@ -36,13 +36,14 @@ pub fn gen_table(key_set: &[u64], payload_set: &[u64]) -> Vec<Tuple> {
 }
 
 pub fn gen_tables<R: Rng>(n: usize, p: f64, rng: &mut R) -> (Vec<Tuple>, Vec<Tuple>) {
-    let fact_keys = gen_fact_keys(n, rng);
-    let fact_payloads = gen_fact_keys(n, rng);
-    let dimension_keys = gen_dimension_keys(&fact_keys, p, rng);
-    let dimension_payloads = gen_fact_keys(dimension_keys.len(), rng);
-    
-    let fact_table = gen_table(&fact_keys, &fact_payloads);
+    let dimension_keys = gen_keys(n, rng);
+    let dimension_payloads = gen_keys(n, rng);
     let dimension_table = gen_table(&dimension_keys, &dimension_payloads);
+
+    let mut fact_keys = gen_fact_keys(&dimension_keys, p, rng);
+    fact_keys.shuffle(rng);
+    let fact_payloads = gen_keys(fact_keys.len(), rng);
+    let fact_table = gen_table(&fact_keys, &fact_payloads);
 
     (fact_table, dimension_table)
 }

@@ -1,7 +1,7 @@
 use std::{iter::Peekable, slice::Iter};
 use rand::{rngs::StdRng, SeedableRng};
 
-use crate::{infrastructure::{gen_dimension_keys, gen_fact_keys, gen_tables}, merge::Merge, tuple::Tuple};
+use crate::{infrastructure::gen_tables, merge::Merge, tuple::Tuple};
 
 mod merge;
 mod tuple;
