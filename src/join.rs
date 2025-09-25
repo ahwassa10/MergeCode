@@ -3,8 +3,8 @@ use std::cmp::Ordering;
 use crate::tuple::Tuple;
 
 fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tuple> {
-    left.sort();
-    right.sort();
+    left.sort_by_key(|t| t.key);
+    right.sort_by_key(|t| t.key);
 
     let mut li = 0;
     let mut ri = 0;
@@ -62,9 +62,9 @@ mod test {
         ];
 
         let mut output = basic_sort_merge_join(left, right).into_iter();
-        assert_eq!(output.next(), Some(Tuple::new(2, 8)));
-        assert_eq!(output.next(), Some(Tuple::new(2, 18)));
         assert_eq!(output.next(), Some(Tuple::new(2, 36)));
+        assert_eq!(output.next(), Some(Tuple::new(2, 18)));
+        assert_eq!(output.next(), Some(Tuple::new(2, 8)));
         assert_eq!(output.next(), Some(Tuple::new(5, 15)));
         assert_eq!(output.next(), None);
 
