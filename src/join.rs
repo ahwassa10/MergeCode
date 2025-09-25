@@ -52,6 +52,9 @@ fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tup
 
 #[cfg(test)]
 mod test {
+    use rand::{rngs::StdRng, SeedableRng};
+
+    use crate::{infrastructure, tuple};
 
     use super::*;
 
@@ -109,5 +112,16 @@ mod test {
         assert_eq!(output.next(), Some(Tuple::new(2, 18)));
         assert_eq!(output.next(), Some(Tuple::new(2, 8)));
         assert_eq!(output.next(), None);
+    }
+
+    #[test]
+    fn compare_sort_merge_nested_loop() {
+        let mut rng = StdRng::seed_from_u64(101);
+        let (lt, rt) = infrastructure::gen_tables(10000, 0.7, &mut rng);
+
+        let nl_output = nested_loop_join(&lt, &rt);
+        let sm_output = basic_sort_merge_join(lt, rt);
+
+        assert!(tuple::table_eq(&nl_output, &sm_output))
     }
 }

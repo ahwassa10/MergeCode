@@ -14,7 +14,7 @@ impl Tuple {
     }
 }
 
-fn table_eq(left: &[Tuple], right: &[Tuple]) -> bool {
+pub fn table_eq(left: &[Tuple], right: &[Tuple]) -> bool {
     let mut leftm = HashMap::with_capacity(left.len());
     for t in left {
         *leftm.entry(t).or_insert(0) += 1;
