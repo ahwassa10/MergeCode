@@ -2,6 +2,20 @@ use std::cmp::Ordering;
 
 use crate::tuple::Tuple;
 
+fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Tuple> {
+    let mut output = Vec::new();
+
+    for lt in left {
+        for rt in right {
+            if lt.key == rt.key {
+                output.push(Tuple::new(lt.key, rt.payload));
+            }
+        }
+    }
+
+    output
+}
+
 fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tuple> {
     left.sort_by_key(|t| t.key);
     right.sort_by_key(|t| t.key);
@@ -67,7 +81,33 @@ mod test {
         assert_eq!(output.next(), Some(Tuple::new(2, 8)));
         assert_eq!(output.next(), Some(Tuple::new(5, 15)));
         assert_eq!(output.next(), None);
-
     }
 
+    #[test]
+    fn nested_loop_join_test() {
+        // Dimension table
+        let left = vec![
+            Tuple::new(5, 10),
+            Tuple::new(6, 100),
+            Tuple::new(2, 34),
+            Tuple::new(7, 18)
+        ];
+        // Fact table. First column is a foreign key
+        // to dimension table
+        let right = vec![
+            Tuple::new(5, 15),
+            Tuple::new(8, 16),
+            Tuple::new(2, 36),
+            Tuple::new(2, 18),
+            Tuple::new(2, 8),
+            Tuple::new(9, 9)
+        ];
+
+        let mut output = nested_loop_join(&left, &right).into_iter();
+        assert_eq!(output.next(), Some(Tuple::new(5, 15)));
+        assert_eq!(output.next(), Some(Tuple::new(2, 36)));
+        assert_eq!(output.next(), Some(Tuple::new(2, 18)));
+        assert_eq!(output.next(), Some(Tuple::new(2, 8)));
+        assert_eq!(output.next(), None);
+    }
 }
