@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, thread};
 
 use crate::tuple::Tuple;
 
@@ -16,14 +16,10 @@ fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Tuple> {
     output
 }
 
-fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tuple> {
-    left.sort_by_key(|t| t.key);
-    right.sort_by_key(|t| t.key);
-
+fn merge_join_sorted(left: &[Tuple], right: &[Tuple], output: &mut Vec<Tuple>) {
     let mut li = 0;
     let mut ri = 0;
-    let mut output = Vec::new();
-    
+
     while li < left.len() && ri < right.len() {
         match left[li].key.cmp(&right[ri].key) {
             Ordering::Less => {li += 1;}
@@ -46,8 +42,59 @@ fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tup
             }
         }
     }
+}
 
+fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tuple> {
+    left.sort_by_key(|t| t.key);
+    right.sort_by_key(|t| t.key);
+
+    let mut output = Vec::new();
+    merge_join_sorted(&left, &right, &mut output);
     output
+}
+
+fn basic_mpsm(mut left: Vec<Tuple>, mut right: Vec<Tuple>, thread_count: usize) -> Vec<Vec<Tuple>>{
+    assert!(thread_count > 0);
+    let private_chunk_size = left.len().div_ceil(thread_count);
+    let public_chunk_size = right.len().div_ceil(thread_count);
+
+    // Sort the public data among thread_count workers
+    thread::scope(|s| {
+        let mut handles = Vec::new();
+        for chunk in right.chunks_mut(public_chunk_size) {
+            handles.push(s.spawn(move || chunk.sort_by_key(|t| t.key)));
+        }
+        for h in handles {
+            h.join().unwrap();
+        }
+    });
+
+    // Borrow right as an immutable reference so that all threads
+    // can share the data.
+    let public: &[Tuple] = &right;
+
+    // Sort each private data chunk and then merge against the 
+    // entire public data.
+    let mut outputs = Vec::new();
+    thread::scope(|s| {
+        let mut handles = Vec::new();
+        for private_chunk in left.chunks_mut(private_chunk_size) {
+            handles.push(s.spawn(move || {
+                private_chunk.sort_by_key(|t| t.key);
+                
+                let mut output = Vec::new();
+                for public_chunk in public.chunks(public_chunk_size) {
+                    merge_join_sorted(private_chunk, public_chunk, &mut output);
+                }
+                output
+            }));
+        }
+        for h in handles {
+            outputs.push(h.join().unwrap());
+        }
+    });
+
+    outputs
 }
 
 #[cfg(test)]
@@ -123,5 +170,16 @@ mod test {
         let sm_output = basic_sort_merge_join(lt, rt);
 
         assert!(infrastructure::table_eq(&nl_output, &sm_output))
+    }
+
+    #[test]
+    fn compare_basic_mpsm_nested_loop() {
+        let mut rng = StdRng::seed_from_u64(101);
+        let (lt, rt) = infrastructure::gen_tables(10000, 0.7, &mut rng);
+
+        let nl_output = nested_loop_join(&lt, &rt);
+        let mpsm_output = basic_mpsm(lt, rt, 4).into_iter().flatten().collect::<Vec<Tuple>>();
+
+        assert!(infrastructure::table_eq(&nl_output, &mpsm_output));
     }
 }
