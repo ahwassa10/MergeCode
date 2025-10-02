@@ -1,14 +1,16 @@
+#![allow(dead_code)]
+
 use std::{cmp::Ordering, thread};
 
-use crate::tuple::Tuple;
+use crate::tuples::{Joined, Tuple};
 
-fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Tuple> {
+fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Joined> {
     let mut output = Vec::new();
 
     for lt in left {
         for rt in right {
             if lt.key == rt.key {
-                output.push(Tuple::new(lt.key, rt.payload));
+                output.push(Joined::new(lt.key, lt.payload, rt.payload));
             }
         }
     }
@@ -16,7 +18,7 @@ fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Tuple> {
     output
 }
 
-fn merge_join_sorted(left: &[Tuple], right: &[Tuple], output: &mut Vec<Tuple>) {
+fn merge_join_sorted(left: &[Tuple], right: &[Tuple], output: &mut Vec<Joined>) {
     let mut li = 0;
     let mut ri = 0;
 
@@ -34,9 +36,9 @@ fn merge_join_sorted(left: &[Tuple], right: &[Tuple], output: &mut Vec<Tuple>) {
                 let r_start = ri;
                 while ri < right.len() && right[ri].key == key { ri += 1; }
 
-                for _ in l_start..li {
+                for i in l_start..li {
                     for j in r_start..ri {
-                        output.push(Tuple::new(key, right[j].payload));
+                        output.push(Joined::new(key, left[i].payload, right[j].payload));
                     }
                 }
             }
@@ -44,7 +46,7 @@ fn merge_join_sorted(left: &[Tuple], right: &[Tuple], output: &mut Vec<Tuple>) {
     }
 }
 
-fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tuple> {
+fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Joined> {
     left.sort_by_key(|t| t.key);
     right.sort_by_key(|t| t.key);
 
@@ -53,7 +55,7 @@ fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Tup
     output
 }
 
-fn basic_mpsm(mut left: Vec<Tuple>, mut right: Vec<Tuple>, thread_count: usize) -> Vec<Vec<Tuple>>{
+fn basic_mpsm(mut left: Vec<Tuple>, mut right: Vec<Tuple>, thread_count: usize) -> Vec<Vec<Joined>>{
     assert!(thread_count > 0);
     let private_chunk_size = left.len().div_ceil(thread_count);
     let public_chunk_size = right.len().div_ceil(thread_count);
@@ -126,10 +128,10 @@ mod test {
         ];
 
         let mut output = basic_sort_merge_join(left, right).into_iter();
-        assert_eq!(output.next(), Some(Tuple::new(2, 36)));
-        assert_eq!(output.next(), Some(Tuple::new(2, 18)));
-        assert_eq!(output.next(), Some(Tuple::new(2, 8)));
-        assert_eq!(output.next(), Some(Tuple::new(5, 15)));
+        assert_eq!(output.next(), Some(Joined::new(2, 34, 36)));
+        assert_eq!(output.next(), Some(Joined::new(2, 34, 18)));
+        assert_eq!(output.next(), Some(Joined::new(2, 34, 8)));
+        assert_eq!(output.next(), Some(Joined::new(5, 10, 15)));
         assert_eq!(output.next(), None);
     }
 
@@ -154,10 +156,10 @@ mod test {
         ];
 
         let mut output = nested_loop_join(&left, &right).into_iter();
-        assert_eq!(output.next(), Some(Tuple::new(5, 15)));
-        assert_eq!(output.next(), Some(Tuple::new(2, 36)));
-        assert_eq!(output.next(), Some(Tuple::new(2, 18)));
-        assert_eq!(output.next(), Some(Tuple::new(2, 8)));
+        assert_eq!(output.next(), Some(Joined::new(5, 10, 15)));
+        assert_eq!(output.next(), Some(Joined::new(2, 34, 36)));
+        assert_eq!(output.next(), Some(Joined::new(2, 34, 18)));
+        assert_eq!(output.next(), Some(Joined::new(2, 34, 8)));
         assert_eq!(output.next(), None);
     }
 
@@ -178,7 +180,7 @@ mod test {
         let (lt, rt) = infrastructure::gen_tables(10000, 0.7, &mut rng);
 
         let nl_output = nested_loop_join(&lt, &rt);
-        let mpsm_output = basic_mpsm(lt, rt, 4).into_iter().flatten().collect::<Vec<Tuple>>();
+        let mpsm_output = basic_mpsm(lt, rt, 4).into_iter().flatten().collect::<Vec<Joined>>();
 
         assert!(infrastructure::table_eq(&nl_output, &mpsm_output));
     }

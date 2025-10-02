@@ -1,8 +1,10 @@
-use std::collections::HashMap;
+#![allow(dead_code)]
+
+use std::{collections::HashMap, hash::Hash};
 
 use rand::{seq::SliceRandom, Rng};
 
-use crate::tuple::Tuple;
+use crate::tuples::Tuple;
 
 pub fn gen_fact_keys<R: Rng>(key_set: &[u64], p: f64, rng: &mut R) -> Vec<u64> {
     assert!(p >= 0.0 && p < 1.0,
@@ -56,7 +58,9 @@ pub fn gen_tables<R: Rng>(n: usize, p: f64, rng: &mut R) -> (Vec<Tuple>, Vec<Tup
     (fact_table, dimension_table)
 }
 
-pub fn table_eq(left: &[Tuple], right: &[Tuple]) -> bool {
+pub fn table_eq<T>(left: &[T], right: &[T]) -> bool
+    where T: Eq + Hash
+{
     let mut leftm = HashMap::with_capacity(left.len());
     for t in left {
         *leftm.entry(t).or_insert(0) += 1;

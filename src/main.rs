@@ -1,9 +1,11 @@
+#![allow(dead_code)]
+
 use rand::{rngs::StdRng, SeedableRng};
 
 use crate::{infrastructure::gen_tables};
 
 mod merge;
-mod tuple;
+mod tuples;
 mod infrastructure;
 mod join;
 
