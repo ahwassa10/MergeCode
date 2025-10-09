@@ -2,7 +2,7 @@
 
 use std::{cmp::Ordering, thread};
 
-use crate::tuples::{Joined, Tuple};
+use crate::{parallel, tuples::{Joined, Tuple}};
 
 fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Joined> {
     let mut output = Vec::new();
@@ -57,23 +57,15 @@ fn basic_sort_merge_join(mut left: Vec<Tuple>, mut right: Vec<Tuple>) -> Vec<Joi
 
 fn basic_mpsm(mut left: Vec<Tuple>, mut right: Vec<Tuple>, thread_count: usize) -> Vec<Vec<Joined>>{
     assert!(thread_count > 0);
-    let private_chunk_size = left.len().div_ceil(thread_count);
-    let public_chunk_size = right.len().div_ceil(thread_count);
-
+    
     // Sort the public data among thread_count workers
-    thread::scope(|s| {
-        let mut handles = Vec::new();
-        for chunk in right.chunks_mut(public_chunk_size) {
-            handles.push(s.spawn(move || chunk.sort_by_key(|t| t.key)));
-        }
-        for h in handles {
-            h.join().unwrap();
-        }
-    });
+    parallel::sort_runs_parallel(&mut right, thread_count);
 
     // Borrow right as an immutable reference so that all threads
     // can share the data.
     let public: &[Tuple] = &right;
+    let private_chunk_size = left.len().div_ceil(thread_count);
+    let public_chunk_size = right.len().div_ceil(thread_count);
 
     // Sort each private data chunk and then merge against the 
     // entire public data.

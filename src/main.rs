@@ -9,6 +9,7 @@ mod tuples;
 mod infrastructure;
 mod join;
 mod search;
+mod parallel;
 
 fn main() {
     let mut rng = StdRng::seed_from_u64(42);
