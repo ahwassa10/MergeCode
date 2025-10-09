@@ -8,6 +8,7 @@ mod merge;
 mod tuples;
 mod infrastructure;
 mod join;
+mod search;
 
 fn main() {
     let mut rng = StdRng::seed_from_u64(42);
