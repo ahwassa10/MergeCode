@@ -22,12 +22,28 @@ pub fn lb_binary_search<T: Ord>(target: T, input: &[T]) -> Option<usize> {
     }
 
     debug_assert!(lo == hi);
-    // The target was greater than every element in the input slice.
-    if lo >= input.len() {
-        return None
-    } else {
-        return Some(lo)
+    // Returns None if the target was greater than every element in the input slice
+    if lo >= input.len() { None } else { Some(lo) }
+}
+
+pub fn lb_binary_search_by_key<T, K, F>(target: &K, input: &[T], key: F) -> Option<usize>
+where
+    F: Fn(&T) -> &K,
+    K: Ord
+{
+    let mut lo = 0;
+    let mut hi = input.len();
+
+    while lo < hi {
+        let mid = (lo + hi) / 2;
+        if key(&input[mid]) < target {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
+
+    if lo >= input.len() { None } else { Some(lo) }
 }
 
 pub fn lb_interpolation_search(target: u64, input: &[u64]) -> Option<usize> {
@@ -114,6 +130,19 @@ mod test {
 
         let res1 = lb_linear_search(target, &input);
         let res2 = lb_binary_search(target, &input);
+        
+        assert_eq!(res1, res2);
+    }
+
+    #[test]
+    fn lb_binary_search_by_key_test() {
+        let mut rng = rand::rng();
+        let mut input = infrastructure::gen_keys(10000, &mut rng);
+        input.sort();
+        let target = rng.next_u64();
+
+        let res1 = lb_linear_search(target, &input);
+        let res2 = lb_binary_search_by_key(&target, &input, |v| &v);
         
         assert_eq!(res1, res2);
     }

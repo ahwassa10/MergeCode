@@ -2,7 +2,7 @@
 
 use std::{cmp::Ordering, thread};
 
-use crate::{histograms, parallel, tuples::{Joined, Tuple}};
+use crate::{histograms, parallel, search, tuples::{Joined, Tuple}};
 
 fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Joined> {
     let mut output = Vec::new();
@@ -19,8 +19,19 @@ fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Joined> {
 }
 
 fn merge_join_sorted(left: &[Tuple], right: &[Tuple], output: &mut Vec<Joined>) {
+    if left.len() == 0 || right.len() == 0 {
+        return 
+    }
+
     let mut li = 0;
     let mut ri = 0;
+
+    if left[li].key < right[ri].key {
+        match search::lb_binary_search_by_key(&right[ri].key, left, |t| &t.key) {
+            Some(i) => li = i,
+            None => return // left and right do not overlap
+        }
+    }
 
     while li < left.len() && ri < right.len() {
         match left[li].key.cmp(&right[ri].key) {
