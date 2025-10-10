@@ -56,7 +56,7 @@ pub fn chunk_histograms(table: &Vec<Tuple>, chunk_count: usize) -> Vec<Vec<u64>>
 struct Cursor(*mut Tuple);
 unsafe impl Send for Cursor {}
 
-pub fn scatter(table: &Vec<Tuple>, chunk_count: usize, prefix_sums: &Vec<Vec<u64>>) {
+pub fn scatter(table: &Vec<Tuple>, chunk_count: usize, prefix_sums: &Vec<Vec<u64>>) -> Vec<Vec<Tuple>> {
     assert!(chunk_count >= 2);
 
     let chunk_size = table.len().div_ceil(chunk_count);
@@ -107,4 +107,6 @@ pub fn scatter(table: &Vec<Tuple>, chunk_count: usize, prefix_sums: &Vec<Vec<u64
             });
         }
     });
+
+    final_chunks
 }

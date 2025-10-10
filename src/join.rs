@@ -2,7 +2,7 @@
 
 use std::{cmp::Ordering, thread};
 
-use crate::{parallel, tuples::{Joined, Tuple}};
+use crate::{histograms, parallel, tuples::{Joined, Tuple}};
 
 fn nested_loop_join(left: &Vec<Tuple>, right: &Vec<Tuple>) -> Vec<Joined> {
     let mut output = Vec::new();
@@ -76,6 +76,54 @@ fn basic_mpsm(mut left: Vec<Tuple>, mut right: Vec<Tuple>, thread_count: usize) 
             handles.push(s.spawn(move || {
                 private_chunk.sort_by_key(|t| t.key);
                 
+                let mut output = Vec::new();
+                for public_chunk in public.chunks(public_chunk_size) {
+                    merge_join_sorted(private_chunk, public_chunk, &mut output);
+                }
+                output
+            }));
+        }
+        for h in handles {
+            outputs.push(h.join().unwrap());
+        }
+    });
+
+    outputs
+}
+
+fn partitioned_mpsm(left: Vec<Tuple>, mut right: Vec<Tuple>, thread_count: usize) -> Vec<Vec<Joined>> {
+    assert!(thread_count > 0);
+
+    // left = private data = R
+    // right = public data = S
+
+    let public_chunk_size = right.len().div_ceil(thread_count);
+
+    // Phase 1 -- https://arxiv.org/abs/1207.0145
+    // Sort the public data among thread_count workers
+    parallel::sort_runs_parallel(&mut right, thread_count);
+
+    // Phase 2
+    // Compute thread_count histograms on the private data using thread_count workers
+    let histograms = parallel::chunk_histograms(&left, thread_count);
+    // Compute prefix sums
+    let prefix_sums = histograms::prefix_sums(&histograms);
+    // Scatter the private data into partitioned chunks
+    let mut private_chunks = parallel::scatter(&left, thread_count, &prefix_sums);
+
+    // Reborrow public as mutable so that all threads can share the data
+    let public: &[Tuple] = &right;
+
+    // Sort each private chunk and then merge against a run of public data
+    let mut outputs = Vec::new();
+    thread::scope(|s| {
+        let mut handles = Vec::new();
+        for private_chunk in &mut private_chunks {
+            handles.push(s.spawn(move || {
+                // Phase 3
+                private_chunk.sort_by_key(|t| t.key);
+
+                // Phase 4
                 let mut output = Vec::new();
                 for public_chunk in public.chunks(public_chunk_size) {
                     merge_join_sorted(private_chunk, public_chunk, &mut output);
@@ -173,6 +221,17 @@ mod test {
 
         let nl_output = nested_loop_join(&lt, &rt);
         let mpsm_output = basic_mpsm(lt, rt, 4).into_iter().flatten().collect::<Vec<Joined>>();
+
+        assert!(infrastructure::table_eq(&nl_output, &mpsm_output));
+    }
+
+    #[test]
+    fn compare_partitioned_mpsm_nested_loop() {
+        let mut rng = StdRng::seed_from_u64(101);
+        let (lt, rt) = infrastructure::gen_tables(10000, 0.7, &mut rng);
+
+        let nl_output = nested_loop_join(&lt, &rt);
+        let mpsm_output = partitioned_mpsm(lt, rt, 4).into_iter().flatten().collect::<Vec<Joined>>();
 
         assert!(infrastructure::table_eq(&nl_output, &mpsm_output));
     }
