@@ -10,9 +10,7 @@ pub fn prefix_sums(histograms: &Vec<Vec<u64>>) -> Vec<Vec<u64>> {
     let mut cur_ps = vec![0; num_bins];
     ps.push(cur_ps.clone());
 
-    // Skip the last histogram since that prefix sum would just tell us the
-    // index of the last value in the chunk.
-    for i in 0..(num_histograms - 1) {
+    for i in 0..num_histograms {
         let histogram = &histograms[i];
         for j in 0..num_bins {
             cur_ps[j] += histogram[j];

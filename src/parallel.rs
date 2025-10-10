@@ -19,12 +19,13 @@ pub fn sort_runs_parallel(table: &mut Vec<Tuple>, chunk_count: usize) {
 }
 
 pub fn chunk_histograms(table: &Vec<Tuple>, chunk_count: usize) -> Vec<Vec<u64>> {
-    assert!(chunk_count > 0);
+    assert!(chunk_count >= 2);
 
     let chunk_size = table.len().div_ceil(chunk_count);
     let bits_prefix = chunk_count.ilog2();
     let num_bins   = 2usize.pow(bits_prefix);
 
+    assert!(bits_prefix > 0);
     assert!(chunk_count == num_bins);
 
     thread::scope(|s| {
