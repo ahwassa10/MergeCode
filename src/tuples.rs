@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Default)]
 pub struct Tuple {
     pub key: u64,
     pub payload: u64
