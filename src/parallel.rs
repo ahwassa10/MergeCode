@@ -18,18 +18,20 @@ pub fn sort_runs_parallel(table: &mut Vec<Tuple>, chunk_count: usize) {
     });
 }
 
-pub fn chunk_histograms(table: &Vec<Tuple>, chunk_count: usize) -> Vec<Vec<i64>> {
+pub fn chunk_histograms(table: &Vec<Tuple>, chunk_count: usize) -> Vec<Vec<u64>> {
     assert!(chunk_count > 0);
 
     let chunk_size = table.len().div_ceil(chunk_count);
     let bits_prefix = chunk_count.ilog2();
     let num_bins   = 2usize.pow(bits_prefix);
 
+    assert!(chunk_count == num_bins);
+
     thread::scope(|s| {
         let mut handles = Vec::new();
         for (chunk_index, chunk) in table.chunks(chunk_size).enumerate() {
             handles.push(s.spawn(move || {
-                let mut histogram: Vec<i64> = vec![0; num_bins];
+                let mut histogram: Vec<u64> = vec![0; num_bins];
 
                 for t in chunk {
                     let key = t.key;
@@ -41,7 +43,7 @@ pub fn chunk_histograms(table: &Vec<Tuple>, chunk_count: usize) -> Vec<Vec<i64>>
             }));
         }
 
-        let mut histograms: Vec<Vec<i64>> = vec![Vec::new(); chunk_count];
+        let mut histograms: Vec<Vec<u64>> = vec![Vec::new(); chunk_count];
         for h in handles {
             let (chunk_index, histogram) = h.join().unwrap();
             histograms[chunk_index] = histogram;
