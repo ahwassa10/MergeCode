@@ -29,7 +29,7 @@ mod test {
     #[test]
     fn prefix_sums_test() {
         let histograms = vec![vec![3, 5], vec![1, 7]];
-        let expected_ps = vec![vec![0, 0], vec![3, 5]];
+        let expected_ps = vec![vec![0, 0], vec![3, 5], vec![4, 12]];
 
         let ps = prefix_sums(&histograms);
         assert_eq!(ps, expected_ps);
@@ -38,7 +38,7 @@ mod test {
     #[test]
     fn prefix_sums_test2() {
         let histograms = vec![vec![10, 7, 3], vec![5, 5, 10], vec![13, 5, 2]];
-        let expected_ps = vec![vec![0, 0, 0], vec![10, 7, 3], vec![15, 12, 13]];
+        let expected_ps = vec![vec![0, 0, 0], vec![10, 7, 3], vec![15, 12, 13], vec![28, 17, 15]];
 
         let ps = prefix_sums(&histograms);
         assert_eq!(ps, expected_ps);

@@ -2,16 +2,8 @@
 
 use rand::{rngs::StdRng, SeedableRng};
 
-use crate::{infrastructure::gen_tables};
+use merge::{infrastructure::gen_tables};
 
-mod merge;
-mod tuples;
-mod infrastructure;
-mod join;
-mod search;
-mod parallel;
-mod histograms;
-mod datasets;
 
 fn main() {
     let mut rng = StdRng::seed_from_u64(42);
