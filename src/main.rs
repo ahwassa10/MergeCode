@@ -11,6 +11,7 @@ mod join;
 mod search;
 mod parallel;
 mod histograms;
+mod datasets;
 
 fn main() {
     let mut rng = StdRng::seed_from_u64(42);
