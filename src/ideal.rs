@@ -19,6 +19,11 @@ pub fn sort_ideal(input: &Vec<usize>) -> Vec<usize> {
     output
 }
 
+pub fn rust_sort(mut input: Vec<usize>) -> Vec<usize> {
+    input.sort();
+    input
+}
+
 pub fn sort_merge_join_ideal(left: &Vec<usize>, right: &Vec<usize>) -> Vec<usize> {
     let left_sorted = sort_ideal(left);
     let right_sorted = sort_ideal(right);
