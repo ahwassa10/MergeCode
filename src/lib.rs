@@ -8,3 +8,4 @@ pub mod search;
 pub mod parallel;
 pub mod histograms;
 pub mod datasets;
+pub mod ideal;
