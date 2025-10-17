@@ -8,6 +8,33 @@ pub fn mem_scan(input: &Vec<usize>) -> usize {
     accumulator
 }
 
+pub fn mem_strided_scan(input: &Vec<usize>) -> usize {
+    let mut accumulator1 = 0;
+    let mut accumulator2 = 0;
+    let half = input.len() / 2;
+    for i in 0..half {
+        accumulator1 = accumulator1 ^ input[i];
+        accumulator2 = accumulator2 ^ input[half + i];
+    }
+    accumulator1 ^ accumulator2
+}
+
+pub fn mem_strided_4_scan(input: &Vec<usize>) -> usize {
+    let mut accumulator1 = 0;
+    let mut accumulator2 = 0;
+    let mut accumulator3 = 0;
+    let mut accumulator4 = 0;
+    let quarter = input.len() / 4;
+    let half = input.len() / 2;
+    for i in 0..quarter {
+        accumulator1 = accumulator1 ^ input[i];
+        accumulator2 = accumulator2 ^ input[quarter + i];
+        accumulator3 = accumulator3 ^ input[half + i];
+        accumulator4 = accumulator4 ^ input[half + quarter + i];
+    }
+    accumulator1 ^ accumulator2 ^ accumulator3 ^ accumulator4
+}
+
 pub fn gen_ideal_n(n: usize) -> Vec<usize> {
     let mut rng = rand::rng();
 

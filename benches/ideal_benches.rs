@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
-use merge::ideal::{gen_ideal_n, hash_join_ideal, mem_scan, rust_sort, sort_ideal, sort_merge_join_ideal};
+use merge::ideal::{gen_ideal_n, hash_join_ideal, mem_scan, mem_strided_4_scan, mem_strided_scan, rust_sort, sort_ideal, sort_merge_join_ideal};
 
 const L1_PROBES_8 : [usize; 16] =
     [512, 1024, 1536, 2048, 2560, 3072, 3584, 4096,
@@ -39,6 +39,50 @@ fn bench_mem_scan(c: &mut Criterion) {
                 },
                 |input| {
                     let out = mem_scan(black_box(&input));
+                    black_box(out);
+                },
+                BatchSize::LargeInput
+            );
+        });
+    }
+}
+
+fn bench_mem_strided_scan(c: &mut Criterion) {
+    let sizes = L3_FINE_PROBES_8;
+
+    let mut group = c.benchmark_group("mem_strided_scan");
+    for &n in &sizes {
+        group.throughput(Throughput::Bytes((n * size_of::<usize>()) as u64));
+
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, &n| {
+            b.iter_batched(
+                || {
+                    gen_ideal_n(n)
+                },
+                |input| {
+                    let out = mem_strided_scan(black_box(&input));
+                    black_box(out);
+                },
+                BatchSize::LargeInput
+            );
+        });
+    }
+}
+
+fn bench_mem_strided_4_scan(c: &mut Criterion) {
+    let sizes = L3_FINE_PROBES_8;
+
+    let mut group = c.benchmark_group("mem_strided_4_scan");
+    for &n in &sizes {
+        group.throughput(Throughput::Bytes((n * size_of::<usize>()) as u64));
+
+        group.bench_with_input(BenchmarkId::from_parameter(n), &n, |b, &n| {
+            b.iter_batched(
+                || {
+                    gen_ideal_n(n)
+                },
+                |input| {
+                    let out = mem_strided_4_scan(black_box(&input));
                     black_box(out);
                 },
                 BatchSize::LargeInput
@@ -158,5 +202,6 @@ fn bench_hash_join_ideal(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_mem_scan, bench_gen_ideal, bench_sort_ideal, bench_rust_sort, bench_sort_merge_join_ideal, bench_hash_join_ideal);
+criterion_group!(benches, bench_mem_scan, bench_mem_strided_scan, bench_mem_strided_4_scan, 
+    bench_gen_ideal, bench_sort_ideal, bench_rust_sort, bench_sort_merge_join_ideal, bench_hash_join_ideal);
 criterion_main!(benches);
