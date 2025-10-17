@@ -1,5 +1,13 @@
 use rand::seq::SliceRandom;
 
+pub fn mem_scan(input: &Vec<usize>) -> usize {
+    let mut accumulator = 0;
+    for i in 0..input.len() {
+        accumulator = accumulator ^ input[i] 
+    }
+    accumulator
+}
+
 pub fn gen_ideal_n(n: usize) -> Vec<usize> {
     let mut rng = rand::rng();
 
