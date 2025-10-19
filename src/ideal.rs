@@ -35,6 +35,18 @@ pub fn mem_strided_4_scan(input: &Vec<usize>) -> usize {
     accumulator1 ^ accumulator2 ^ accumulator3 ^ accumulator4
 }
 
+pub fn mem_random_read(input: &Vec<usize>) -> usize {
+    let mut accumulator = 0;
+    let mut index = input[0];
+    for _ in 0..input.len() {
+        let read = input[index];
+        accumulator = accumulator ^ read;
+        index = read;
+    }
+
+    accumulator
+}
+
 pub fn gen_ideal_n(n: usize) -> Vec<usize> {
     let mut rng = rand::rng();
 
