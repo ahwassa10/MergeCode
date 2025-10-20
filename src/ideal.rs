@@ -1,4 +1,4 @@
-use rand::seq::SliceRandom;
+use rand::{seq::SliceRandom, Rng};
 
 pub fn mem_scan(input: &Vec<usize>) -> usize {
     let mut accumulator = 0;
@@ -42,6 +42,53 @@ pub fn mem_random_read(input: &Vec<usize>) -> usize {
         let read = input[index];
         accumulator = accumulator ^ read;
         index = read;
+    }
+
+    accumulator
+}
+
+pub fn mem_random_read2<R: Rng> (input: &Vec<usize>, rng: &mut R) -> usize {
+    let mut accumulator = 0;
+    let size = input.len();
+    for _ in 0..size {
+        let random_value = rng.random_range(0..size);
+        let read = input[random_value];
+        accumulator = accumulator ^ read;
+    }
+
+    accumulator
+}
+
+pub fn mem_random_read_read(r: &Vec<usize>, s: &Vec<usize>) -> usize {
+    let mut accumulator = 0;
+    let size = r.len();
+    for i in 0..size {
+        let read = r[i];
+        let read2 = s[read];
+        accumulator = accumulator ^ read2;
+    }
+
+    accumulator
+}
+
+pub fn mem_read_write(r: &Vec<usize>, s: &mut Vec<usize>) -> usize {
+    let mut accumulator = 0;
+    for i in r {
+        let read = r[*i];
+        accumulator = accumulator ^ read;
+        s[*i] = accumulator;
+    }
+
+    accumulator
+}
+
+pub fn mem_read_write2(r: &Vec<usize>, s: &mut Vec<usize>) -> usize {
+    let mut accumulator = 0;
+    let size = r.len();
+    for i in 0..size {
+        let read = r[i];
+        accumulator = accumulator ^ read;
+        s[i] = accumulator;
     }
 
     accumulator

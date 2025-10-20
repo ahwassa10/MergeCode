@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
-use merge::ideal::{gen_ideal_n, hash_join_ideal, mem_random_read, mem_scan, mem_strided_4_scan, mem_strided_scan, rust_sort, sort_ideal, sort_merge_join_ideal};
+use merge::ideal::{gen_ideal_n, hash_join_ideal, mem_random_read, mem_random_read2, mem_random_read_read, mem_read_write, mem_read_write2, mem_scan, mem_strided_4_scan, mem_strided_scan, rust_sort, sort_ideal, sort_merge_join_ideal};
 
 const L1_PROBES_8 : [usize; 16] =
     [512, 1024, 1536, 2048, 2560, 3072, 3584, 4096,
@@ -129,6 +129,98 @@ fn bench_mem_random_read(c: &mut Criterion) {
     }
 }
 
+fn bench_mem_random_read2(c: &mut Criterion) {
+    let sizes = ALL_PROBES;
+
+    let mut group = c.benchmark_group("mem_random_read2");
+    for (i, &n) in (&sizes).iter().enumerate() {
+        group.throughput(Throughput::Bytes((n * size_of::<usize>()) as u64));
+
+        group.bench_with_input(format!("{}: {}", i, n), &n, |b, &n| {
+            b.iter_batched(
+                || {
+                    (gen_ideal_n(n), rand::rng())
+
+                },
+                |mut input| {
+                    let out = mem_random_read2(black_box(&input.0), black_box(&mut input.1));
+                    black_box(out)
+                },
+                BatchSize::LargeInput
+            );
+        });
+    }
+}
+
+fn bench_mem_random_read_read(c: &mut Criterion) {
+    let sizes = ALL_PROBES;
+
+    let mut group = c.benchmark_group("mem_random_read_read");
+    for (i, &n) in (&sizes).iter().enumerate() {
+        group.throughput(Throughput::Bytes((n * size_of::<usize>()) as u64));
+
+        group.bench_with_input(format!("{}: {}", i, n), &n, |b, &n| {
+            b.iter_batched(
+                || {
+                    (gen_ideal_n(n), gen_ideal_n(n))
+
+                },
+                |input| {
+                    let out = mem_random_read_read(black_box(&input.0), black_box(&input.1));
+                    black_box(out)
+                },
+                BatchSize::LargeInput
+            );
+        });
+    }
+}
+
+fn bench_mem_read_write1(c: &mut Criterion) {
+    let sizes = ALL_PROBES;
+
+    let mut group = c.benchmark_group("mem_read_write1");
+    for (i, &n) in (&sizes).iter().enumerate() {
+        group.throughput(Throughput::Bytes((n * size_of::<usize>()) as u64));
+
+        group.bench_with_input(format!("{}: {}", i, n), &n, |b, &n| {
+            b.iter_batched(
+                || {
+                    (gen_ideal_n(n), gen_ideal_n(n))
+
+                },
+                |mut input| {
+                    let out = mem_read_write(black_box(&input.0), black_box(&mut input.1));
+                    black_box(out)
+                },
+                BatchSize::LargeInput
+            );
+        });
+    }
+}
+
+fn bench_mem_read_write2(c: &mut Criterion) {
+    let sizes = ALL_PROBES;
+
+    let mut group = c.benchmark_group("mem_read_write2");
+    for (i, &n) in (&sizes).iter().enumerate() {
+        group.throughput(Throughput::Bytes((n * size_of::<usize>()) as u64));
+
+        group.bench_with_input(format!("{}: {}", i, n), &n, |b, &n| {
+            b.iter_batched(
+                || {
+                    (gen_ideal_n(n), gen_ideal_n(n))
+
+                },
+                |mut input| {
+                    let out = mem_read_write2(black_box(&input.0), black_box(&mut input.1));
+                    black_box(out)
+                },
+                BatchSize::LargeInput
+            );
+        });
+    }
+}
+
 fn bench_sort_ideal(c: &mut Criterion) {
     let sizes = ALL_PROBES;
 
@@ -225,6 +317,10 @@ fn bench_hash_join_ideal(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_mem_scan, bench_mem_strided_scan, bench_mem_strided_4_scan, bench_mem_random_read,
-    bench_sort_ideal, bench_rust_sort, bench_sort_merge_join_ideal, bench_hash_join_ideal);
+criterion_group!(benches,
+    bench_mem_scan, bench_mem_strided_scan, bench_mem_strided_4_scan,
+    bench_mem_random_read, bench_mem_random_read2, bench_mem_random_read_read,
+    bench_mem_read_write1, bench_mem_read_write2,
+    bench_sort_ideal, bench_rust_sort,
+    bench_sort_merge_join_ideal, bench_hash_join_ideal);
 criterion_main!(benches);
